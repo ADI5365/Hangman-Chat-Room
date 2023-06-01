@@ -4,8 +4,8 @@
 
 # Citation for chat room environment set up:
 # Date: 6/1/23
-# Adapted from CS 372 Project 1 server and client environment set up
-# and from https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
+# Adapted from CS 372 Project 1 and from BioGem
+# Source URL: https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
 
 
 import time

@@ -2,7 +2,9 @@
 # Class: CS 372-400 SP23
 # Server-side of the chat/game programming project
 
-# Basic server/client chat environment set up adapted from BioGem
+# Citation for chat room environment set up:
+# Date: 6/1/23
+# Adapted from CS 372 Project 1 and from BioGem
 # Source URL: https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
 
 
