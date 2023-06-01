@@ -25,7 +25,7 @@ def setUpChat_Server():
 
     # Set up the server socket and data to send to clients
     serverSocket = socket.socket()
-    socketHost = socket.gethostname()
+    socketHost = 'localhost'
     ip = socket.gethostbyname(socketHost)
     serverPort = 3120
     
@@ -46,10 +46,10 @@ def setUpChat_Server():
     # When the client sets up the chat environment on their side 
     # the connection is established
     try:
-        socketName = connSocket.recv(1024)
+        socketName = connSocket.recv(4096)
         socketName = socketName.decode()
         print(socketName,
-              'has connected to the chat room\nEnter [e] to exit chat room\n')
+              'has connected to the chat room\nEnter /q to exit chat room\n')
         connSocket.send(clientName.encode())
     except:
         print('Error: client has failed to connect')
@@ -58,15 +58,18 @@ def setUpChat_Server():
     # sending messages back and forth
     while True:
         message = input(str('Me : '))  
-        if message == '[e]':
+        if message == '/q':
             message = 'Left chat room'
             connSocket.send(message.encode())
             print('\n')
             break
         connSocket.send(message.encode())  # Sending message to client
-        message = connSocket.recv(1024)
+        message = connSocket.recv(4096)
         message = message.decode()
         print(socketName, ':', message)  # Client incoming messages
+
+    # End the session once one of the hosts exits the chat
+    serverSocket.close()
 
 
 if __name__ == '__main__':
