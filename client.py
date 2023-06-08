@@ -8,46 +8,50 @@
 # Source URL: https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
 
 
-import time
 import socket
 
 
-print('\nWelcome to the [Game] Chat Room')
-print('Initializing....\n')
-time.sleep(1)
+def setUpClientChat():
+    """
+    Parameters: none
+    Returns: none
 
-# Set up the client socket and data that sends to server
-with socket.socket() as clientSocket:
-    socketHost = 'localhost'
-    ip = socket.gethostbyname(socketHost)
+    Sets up an instance of client-side access to a chat with a server
+    """
+    print('\nWelcome to the [Game] Chat Room')
 
-    # Select the address of the server to connect to in chat
-    hostAddress = input(str('Enter server address: '))
-    name = input(str('Enter your name: '))
-    port = 3120
+    # Set up the client socket and data that sends to server
+    with socket.socket() as clientSocket:
+        socketHost = 'localhost'
 
-    # Bind the port number to this socket
-    # Set up to connect to the server's chat room
-    try: 
-        time.sleep(1)
-        clientSocket.connect((hostAddress, port))
-        print('Connected to: ', socketHost, 'on port: ', port, '\n')
-    except:
-        print('Error: socket failed to launch')
+        # Select the address of the server to connect to in chat
+        hostAddress = input('Enter server address: ')
+        name = input('Enter your name: ')
+        port = 3120
 
-    # Put in client username and enter the chat room
-    try:
-        clientSocket.send(name.encode())
-        print('Server has joined the chat room\nEnter /q to exit chat\n')
-        print(
-            'Wait for input prompt before entering message to send\nNote: to start a game of [game] type "play [game]"\n')
-    except:
-        print('Error: failed to connect')
+        # Bind port number to the socket and connect to server's chat room
+        try:
+            clientSocket.connect((hostAddress, port))
+            print('Connected to: ', socketHost, 'on port: ', port, '\n')
+        except:
+            print('Error: socket failed to launch')
 
-    # As long as the chat room is open, the server and client take turns
-    # sending messages back and forth
+        # Put in client username and enter the chat room
+        try:
+            clientSocket.send(name.encode())
+            print('Server has joined the chat room\nEnter /q to exit chat\n')
+            print(
+                'Wait for input prompt before entering message to send\nNote: to start a game of [game] type "play [game]"\n')
+        except:
+            print('Error: failed to connect')
+
+        chatRoom(clientSocket)
+
+def chatRoom(clientSocket):
+
+    # As long as chat room is open, server and client send messages back and forth
     while True:
-        
+
         # Receiving incoming messages from the server
         serverMessage = clientSocket.recv(4096)
         serverMessage = serverMessage.decode()
@@ -57,7 +61,7 @@ with socket.socket() as clientSocket:
         if serverMessage == 'Left chat room':
             print('Shutting down \n')
             break
-        myMessage = input(str('Enter message : '))
+        myMessage = input('Enter message : ')
 
         # If client exits it sends a last message to the server to let them know
         if myMessage == '/q':
@@ -66,3 +70,7 @@ with socket.socket() as clientSocket:
             print('Shutting down \n')
             break
         clientSocket.send(myMessage.encode())  # Sending a message to server
+
+
+if __name__ == '__main__':
+    setUpClientChat()
