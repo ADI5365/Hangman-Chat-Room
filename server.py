@@ -22,14 +22,15 @@ def setUpServerChat():
 
     # Set up the server socket and data to send to clients
     with socket.socket() as serverSocket:
-        socketHost = 'localhost'
-        port = 3120
-
-        # Bind port number to the socket and listen for client requests to connect
         try:
+            socketHost = 'localhost'
+            port = 3120
+
+            # Bind port number to the socket and listen for client requests to connect
             serverSocket.bind((socketHost, port))
-            serverSocket.listen(1)
+            serverSocket.listen(1)  # Listening for incoming client requests
             print('\nServer listening on:', socketHost, 'on port:', port)
+
             connSocket, addr = serverSocket.accept()
             print('Received connection from (', addr[0], ',', addr[1], ')\n')
         except:
@@ -37,17 +38,24 @@ def setUpServerChat():
 
         # When the client sets up the chat on their side, connection established
         try:
-            socketName = connSocket.recv(4096)
-            socketName = socketName.decode()
-            print(socketName, 'has connected to the chat room\nEnter /q to exit\n')
+            clientName = connSocket.recv(4096)
+            clientName = clientName.decode()
+            print(clientName, 'has connected to the chat room\nEnter /q to exit')
+            print('Please wait for input prompt before entering message to send\n')
         except:
             print('Error: client has failed to connect')
 
-        chatRoom(connSocket, socketName)
-           
+        chatRoom(connSocket, clientName)
 
-def chatRoom(connSocket, socketName):
 
+def chatRoom(connSocket, clientName):
+    """
+    Parameters: two parameters, server's socket and client's username
+    Returns: none
+
+    Opens a chat room environment between a server and client 
+    from which a game of [game] can be launched
+    """
     # As long as chat room is open, server and client send messages back and forth
     while True:
         myMessage = input('Enter message : ')
@@ -63,7 +71,7 @@ def chatRoom(connSocket, socketName):
         # Receiving incoming client messages
         clientMessage = connSocket.recv(4096)
         clientMessage = clientMessage.decode()
-        print(socketName, ':', clientMessage)
+        print(clientName, ':', clientMessage)
 
         # If the client exits the session ends on the server side too
         if clientMessage == 'Left chat room':

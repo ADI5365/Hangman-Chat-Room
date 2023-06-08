@@ -7,8 +7,14 @@
 # Adapted from CS 372 Project 1 and from BioGem
 # Source URL: https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
 
+# Citation for textwrap:
+# Date 6/8/23
+# Information on dedent from textwrap taken from Python Morsels
+# Source URL: https://www.pythonmorsels.com/dedent/
+
 
 import socket
+from textwrap import dedent
 
 
 def setUpClientChat():
@@ -22,33 +28,41 @@ def setUpClientChat():
 
     # Set up the client socket and data that sends to server
     with socket.socket() as clientSocket:
-        socketHost = 'localhost'
-
-        # Select the address of the server to connect to in chat
-        hostAddress = input('Enter server address: ')
-        name = input('Enter your name: ')
-        port = 3120
-
-        # Bind port number to the socket and connect to server's chat room
         try:
+            hostAddress = input('Enter server address: ')
+            port = 3120
+
+            # Bind port number to the socket and connect to server's chat room
             clientSocket.connect((hostAddress, port))
-            print('Connected to: ', socketHost, 'on port: ', port, '\n')
+            print('Connected to: ', hostAddress, 'on port: ', port, '\n')
         except:
             print('Error: socket failed to launch')
 
         # Put in client username and enter the chat room
         try:
-            clientSocket.send(name.encode())
-            print('Server has joined the chat room\nEnter /q to exit chat\n')
-            print(
-                'Wait for input prompt before entering message to send\nNote: to start a game of [game] type "play [game]"\n')
+            username = input('Enter your name: ')
+            clientSocket.send(username.encode())
+
+            print(dedent("""\
+                Server has joined the chat room
+                Enter /q to exit chat
+                Please wait for input prompt before entering message to send
+                Note: to start a game of [game] type "play [game]"\n"""
+            ))
         except:
             print('Error: failed to connect')
 
         chatRoom(clientSocket)
 
-def chatRoom(clientSocket):
 
+def chatRoom(clientSocket):
+    """
+    Parameters: one parameter, client's socket
+    Returns: none
+
+    Opens a chat room environment between a server and client 
+    from which a game of [game] can be launched
+    """
     # As long as chat room is open, server and client send messages back and forth
     while True:
 
