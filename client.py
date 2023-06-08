@@ -4,8 +4,8 @@
 
 # Citation for chat room environment set up:
 # Date: 6/1/23
-# Adapted from CS 372 Project 1 and from BioGem
-# Source URL: https://www.biob.in/2018/04/simple-server-and-client-chat-using.html
+# Adapted from CS 372 Project 1 and from Geeks for Geeks
+# Source URL: https://www.geeksforgeeks.org/with-statement-in-python/
 
 # Citation for textwrap:
 # Date 6/8/23
@@ -13,6 +13,7 @@
 # Source URL: https://www.pythonmorsels.com/dedent/
 
 
+import time
 import socket
 from textwrap import dedent
 
@@ -24,7 +25,8 @@ def setUpClientChat():
 
     Sets up an instance of client-side access to a chat with a server
     """
-    print('\nWelcome to the [Game] Chat Room')
+    print('\nWelcome to the Hangman Chat Room')
+    time.sleep(1)
 
     # Set up the client socket and data that sends to server
     with socket.socket() as clientSocket:
@@ -47,7 +49,7 @@ def setUpClientChat():
                 Server has joined the chat room
                 Enter /q to exit chat
                 Please wait for input prompt before entering message to send
-                Note: to start a game of [game] type "play [game]"\n"""
+                Note: to start a game of hangman, type "play hangman"\n"""
             ))
         except:
             print('Error: failed to connect')
@@ -61,7 +63,7 @@ def chatRoom(clientSocket):
     Returns: none
 
     Opens a chat room environment between a server and client 
-    from which a game of [game] can be launched
+    from which a game of hangman can be launched
     """
     # As long as chat room is open, server and client send messages back and forth
     while True:
