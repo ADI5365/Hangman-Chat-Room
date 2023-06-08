@@ -22,32 +22,61 @@ def setUpServerChat():
     print('\nWelcome to the Hangman Chat Room')
     time.sleep(1)
 
-    # Set up the server socket and data to send to clients
+    # Set up socket connection with a client and launch the chat room
     with socket.socket() as serverSocket:
-        try:
-            socketHost = 'localhost'
-            port = 3120
+        socketHost = 'localhost'
+        port = 3120
 
-            # Bind port number to the socket and listen for client requests to connect
-            serverSocket.bind((socketHost, port))
-            serverSocket.listen(1)  # Listening for incoming client requests
-            print('\nServer listening on:', socketHost, 'on port:', port)
-
-            connSocket, addr = serverSocket.accept()
-            print('Received connection from (', addr[0], ',', addr[1], ')\n')
-        except:
-            print('Error: socket failed to launch')
-
-        # When the client sets up the chat on their side, connection established
-        try:
-            clientName = connSocket.recv(4096)
-            clientName = clientName.decode()
-            print(clientName, 'has connected to the chat room\nEnter /q to exit')
-            print('Please wait for input prompt before entering message to send\n')
-        except:
-            print('Error: client has failed to connect')
-
+        connSocket = launchSocket(serverSocket, socketHost, port) 
+        clientName = clientConnect(connSocket)
         chatRoom(connSocket, clientName)
+
+
+def launchSocket(serverSocket, socketHost, port):
+    """
+    Parameters: three parameters, server's listening socket,
+    the localhost, and port
+    Returns: the socket connecting to a client
+
+    Listens for client requests to connect and launches 
+    a new socket when one is received
+    """
+    try:
+        # Bind port number to the socket and listen for client requests to connect
+        serverSocket.bind((socketHost, port))
+        serverSocket.listen(1)  # Listening for incoming client requests
+        print('\nServer listening on:', socketHost, 'on port:', port)
+
+        connSocket, addr = serverSocket.accept()
+        print('Received connection from (', addr[0], ',', addr[1], ')\n')
+        return connSocket
+    
+    # Server's socket setup for the connection request failed to bind/connect
+    except:
+        print('Error: socket failed to launch')
+        return
+    
+
+def clientConnect(connSocket):
+    """
+    Parameters: one parameter, the socket set up with a client
+    Returns: the client's username
+
+    Listens on the new set up socket for the client's username
+    to complete the connection establishment
+    """
+    try:
+        # When the client sets up the chat on their side, connection established
+        clientName = connSocket.recv(4096)
+        clientName = clientName.decode()
+        print(clientName, 'has connected to the chat room\nEnter /q to exit')
+        print('Please wait for input prompt before entering message to send\n')
+        return clientName
+    
+    # Client failed to connect or exited before entering a username
+    except:
+        print('Error: client has failed to connect')
+        return 
 
 
 def chatRoom(connSocket, clientName):
@@ -111,17 +140,17 @@ def hangmanGame(connSocket):
             else:
                 printedGuesses += '_'
                 notGuessed += 1
-        connSocket.send(printedGuesses)
+        connSocket.send(printedGuesses.encode())
 
         # The client has guessed all the letters - the game ends and returns to regular chat
         if notGuessed == 0:
             gameWon = 'You won! The game will now exit back to the chat room'
-            connSocket.send(gameWon)
+            connSocket.send(gameWon.encode())
             print('The client has won! The game is over and is exiting to the chat room')
             break
         
         guessMsg = 'Guess a letter'
-        connSocket.send(guessMsg).encode()
+        connSocket.send(guessMsg.encode())
 
         # Receiving the client's letter guess on each turn
         clientGuess = connSocket.recv(4096)
@@ -135,11 +164,11 @@ def hangmanGame(connSocket):
         if clientGuess not in secretWord:
             turns -= 1
             wrongLetter = 'Wrong letter. You have', turns, 'more guesses'
-            connSocket.send(wrongLetter)
+            connSocket.send(wrongLetter.encode())
 
             if turns == 0:
                 gameOver = 'No more guesses left. You lose. The game will now exit back to the chat room'
-                connSocket.send(gameOver)
+                connSocket.send(gameOver.encode())
 
 
 if __name__ == '__main__':
