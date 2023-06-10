@@ -174,33 +174,9 @@ class HangmanGameServer():
                 gameWon = 'You won! The game will now exit back to the chat room'
                 self.connSocket.send(gameWon.encode())
                 print(self.clientName, ' has won! The game is over. Exiting to the chat room...')
-                break
+                self.chatRoom()
 
-            # If the client wants to exit the game, both the game and chat room session are closed
-            if clientGuess == '/q':
-                print(self.clientName, ' has left game. Shutting down')
-                exitGame = '\nYou have exited the game and chat room. Shutting down'
-                self.connSocket.send(exitGame.encode())
-                quit()
-
-            # Makes sure guess is a single letter before checking it against the word
-            if len(clientGuess) > 1:
-                invalidChar = 'Invalid response. Please type just a single letter'
-                self.connSocket.send(invalidChar.encode())
-            self.guesses += clientGuess
-
-            # For wrong letters removes a turn and lets client know to guess again
-            if clientGuess not in self.secretWord:
-                self.turns -= 1
-                wrongLetter = f"Wrong letter. You have {self.turns} more guesses\n"
-                self.connSocket.send(wrongLetter.encode())
-
-                # When turns run out, game is over and returns to the chat room
-                if self.turns == 0:
-                    print(self.clientName, ' has lost. Exiting to the chat room...')
-                    gameOver = '\nNo more guesses. You lose. Exiting to the chat room...'
-                    self.connSocket.send(gameOver.encode())
-                    break
+            self.verifyGuess(clientGuess)
     
     def printLine(self):
         """
@@ -222,6 +198,40 @@ class HangmanGameServer():
         sendTo = printedGuesses + '\nHere are the currently revealed letters. Guess a letter\n'
         self.connSocket.send(sendTo.encode())
         return printedGuesses
+    
+    def verifyGuess(self, guess):
+        """
+        Parameters: one parameter, a client's guess
+        Returns: none
+
+        Takes the client's guess at a letter and verifies if it a valid response,
+        a letter in the secretWord,  the losing turn, or shutting down the game
+        """
+        # If the client wants to exit the game, both the game and chat room session are closed
+        if guess == '/q':
+            print(self.clientName, ' has left game. Shutting down')
+            exitGame = '\nYou have exited the game and chat room. Shutting down'
+            self.connSocket.send(exitGame.encode())
+            quit()
+
+        # Makes sure guess is a single letter
+        if len(guess) > 1 or not guess.isalpha():
+            invalidChar = 'Invalid response. Please type just a single letter'
+            self.connSocket.send(invalidChar.encode())
+        self.guesses += guess
+
+        # For wrong letters removes a turn and lets client know to guess again
+        if guess not in self.secretWord:
+            self.turns -= 1
+            wrongLetter = f"Wrong letter. You have {self.turns} more guesses\n"
+            self.connSocket.send(wrongLetter.encode())
+
+            # When turns run out, game is over and returns to the chat room
+            if self.turns == 0:
+                print(self.clientName, ' has lost. Exiting to the chat room...')
+                gameOver = '\nNo more guesses. You lose. Exiting to the chat room...'
+                self.connSocket.send(gameOver.encode())
+                self.chatRoom()
 
 
 if __name__ == '__main__':
