@@ -43,7 +43,8 @@ class HangmanGameClient():
         time.sleep(1)
 
         # Set up the client socket and data that sends to server
-        with socket.socket() as setupSocket:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as setupSocket:
+            setupSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.clientSocket = setupSocket
             self.launchSocket()
             self.username = self.serverConnect()
