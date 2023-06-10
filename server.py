@@ -24,6 +24,9 @@ class HangmanGameServer():
 
     def __init__(self):
         """
+        Parameters: none
+        Returns: none
+
         Initializer method for the HangmanGameServer class
         """
 
@@ -138,49 +141,58 @@ class HangmanGameServer():
 
         Implements the hangman game within the chat room when requested by the client
         """
-
         # Set up the game environment
-        gameMsg = 'Welcome to a game of hangman!\nType "start" to start game'
+        gameMsg = 'Welcome to a game of hangman!\nType "1" to start'
         self.connSocket.send(gameMsg.encode())
         self.secretWord = input('Choose a word for ' + self.clientName + ' to guess: ')
+
+        # Validate the word to guess has only letters, no numbers or symbols
+        if not self.secretWord.isalpha():
+            self.secretWord = input('Invalid. Please enter a word with only letters: ')
         time.sleep(1)
-        self.gameLogic()  # Main logic of the game
+        self.gameLogic()
 
     def gameLogic(self):
         """
-        
+        Parameters: none
+        Returns: none
+
+        Implements the bulk of the game logic - making guesses, decrementing turns,
+        and ending/exiting the game
         """
         while self.turns > 0:
             printLine = self.printLine()  # Print out the secretWord with revealed letters
-
-            # The client has guessed all the letters - the game ends and returns to regular chat
-            if self.notGuessed == 0 or printLine.find('_') == -1:
-                gameWon = '\nYou won! The game will now exit back to the chat room'
-                self.connSocket.send(gameWon.encode())
-                print(self.clientName, ' has won! The game is over. Exiting to the chat room...')
-                break
+            print(printLine)
 
             # Receiving the client's letter guess on each turn
             clientGuess = self.connSocket.recv(4096)
             clientGuess = clientGuess.decode()
+            if clientGuess == '1': continue
+
+            # The client has guessed all the letters - the game ends and returns to regular chat
+            if self.notGuessed == 0 or '_' not in printLine:
+                gameWon = 'You won! The game will now exit back to the chat room'
+                self.connSocket.send(gameWon.encode())
+                print(self.clientName, ' has won! The game is over. Exiting to the chat room...')
+                break
 
             # If the client wants to exit the game, both the game and chat room session are closed
-            if clientGuess == '\q':
+            if clientGuess == '/q':
                 print(self.clientName, ' has left game. Shutting down')
                 exitGame = '\nYou have exited the game and chat room. Shutting down'
                 self.connSocket.send(exitGame.encode())
                 quit()
 
-            # Makes sure guess is a single letter before doing anything else with it
+            # Makes sure guess is a single letter before checking it against the word
             if len(clientGuess) > 1:
-                invalidChar = 'Invalid response. Please guess a single letter'
+                invalidChar = 'Invalid response. Please type just a single letter'
                 self.connSocket.send(invalidChar.encode())
             self.guesses += clientGuess
 
             # For wrong letters removes a turn and lets client know to guess again
-            if clientGuess[0] not in self.secretWord:
+            if clientGuess not in self.secretWord:
                 self.turns -= 1
-                wrongLetter = f"Wrong letter. You have {self.turns} more guesses"
+                wrongLetter = f"Wrong letter. You have {self.turns} more guesses\n"
                 self.connSocket.send(wrongLetter.encode())
 
                 # When turns run out, game is over and returns to the chat room
@@ -207,7 +219,7 @@ class HangmanGameServer():
             else:
                 printedGuesses += '_'
                 self.notGuessed += 1
-        sendTo = printedGuesses + '\nHere are the currently revealed letters. Guess a letter'
+        sendTo = printedGuesses + '\nHere are the currently revealed letters. Guess a letter\n'
         self.connSocket.send(sendTo.encode())
         return printedGuesses
 

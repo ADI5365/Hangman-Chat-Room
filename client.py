@@ -30,6 +30,7 @@ class HangmanGameClient():
         self.hostAddress = ''
         self.port = 3120
         self.username = ''
+        self.clientSocket = None
 
     def setUpClientChat(self):
         """
@@ -42,14 +43,15 @@ class HangmanGameClient():
         time.sleep(1)
 
         # Set up the client socket and data that sends to server
-        with socket.socket() as clientSocket:
-            self.launchSocket(clientSocket)
-            self.username = self.serverConnect(clientSocket)
-            self.chatRoom(clientSocket)
+        with socket.socket() as setupSocket:
+            self.clientSocket = setupSocket
+            self.launchSocket()
+            self.username = self.serverConnect()
+            self.chatRoom()
 
-    def launchSocket(self, clientSocket):
+    def launchSocket(self):
         """
-        Parameters: the client's socket
+        Parameters: none
         Returns: none
 
         Launches the client's socket to connect to the server program
@@ -57,14 +59,14 @@ class HangmanGameClient():
         # Bind port number to the socket and connect to server's chat room
         try:
             self.hostAddress = input('Enter server address: ')
-            clientSocket.connect((self.hostAddress, self.port))
+            self.clientSocket.connect((self.hostAddress, self.port))
             print('Connected to: ', self.hostAddress, 'on port: ', self.port, '\n')
         except:
             print('Error: socket failed to launch')
 
-    def serverConnect(self, clientSocket):
+    def serverConnect(self):
         """
-        Parameters: the client's socket
+        Parameters: none
         Returns: none
 
         Completes setup with client's username for the chat room
@@ -72,7 +74,7 @@ class HangmanGameClient():
         # Put in client username and enter the chat room
         try:
             self.username = input('Enter your name: ')
-            clientSocket.send(self.username.encode())
+            self.clientSocket.send(self.username.encode())
 
             print(dedent("""\
                 Server has joined the chat room
@@ -83,9 +85,9 @@ class HangmanGameClient():
         except:
             print('Error: failed to connect')
 
-    def chatRoom(self, clientSocket):
+    def chatRoom(self):
         """
-        Parameters: the client's socket
+        Parameters: none
         Returns: none
 
         Opens a chat room environment between a server and client 
@@ -95,7 +97,7 @@ class HangmanGameClient():
         while True:
 
             # Receiving incoming messages from the server
-            serverMessage = clientSocket.recv(4096)
+            serverMessage = self.clientSocket.recv(4096)
             serverMessage = serverMessage.decode()
             print('Server :', serverMessage)
 
@@ -108,10 +110,10 @@ class HangmanGameClient():
             # If client exits it sends a last message to the server to let them know
             if myMessage == '/q':
                 myMessage = 'Left chat room'
-                clientSocket.send(myMessage.encode())
+                self.clientSocket.send(myMessage.encode())
                 print('Shutting down \n')
                 break
-            clientSocket.send(myMessage.encode())  # Sending a message to server
+            self.clientSocket.send(myMessage.encode())  # Sending a message to server
 
 
 if __name__ == '__main__':
