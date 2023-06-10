@@ -12,6 +12,11 @@
 # Adapted from Python for Beginners
 # Source URL: https://www.pythonforbeginners.com/code-snippets-source-code/game-hangman
 
+# Citation for hangman art:
+# Date: 6/10/23
+# Used hangman art bank from chrishorton GitHub, in reverse order
+# Source URL: https://gist.github.com/chrishorton/8510732aa9a80a03c829b09f12e20d9c
+
 
 import socket
 import time
@@ -42,6 +47,77 @@ class HangmanGameServer():
         self.turns = 10
         self.guesses = ''
         self.notGuessed = 0
+        self.HANGMANART = ['''
+             +---+
+             |   |
+             O   |
+            /|\  |
+            / \  |
+                 |
+             =========''', '''
+             +---+
+             |   |
+             O   |
+            /|\  |
+            /    |
+                 |
+             =========''', '''
+             +---+
+             |   |
+             O   |
+            /|\  |
+                 |
+                 |
+             =========''', '''
+             +---+
+             |   |
+             O   |
+            /|   |
+                 |
+                 |
+             =========''', '''
+             +---+
+             |   |
+             O   |
+             |   |
+                 |
+                 |
+             =========''', '''
+             +---+
+             |   |
+             O   |
+                 |
+                 |
+                 |
+             =========''', '''
+             +---+
+             |   |
+                 |
+                 |
+                 |
+                 |
+             =========''', '''
+             +---+
+                 |
+                 |
+                 |
+                 |
+                 |
+             =========''', '''
+             
+                 |
+                 |
+                 |
+                 |
+                 |
+             =========''', '''
+        
+               
+                 
+                
+                 
+                 
+             =========''']
 
     def setUpServerChat(self):
         """
@@ -55,7 +131,7 @@ class HangmanGameServer():
 
         # Set up socket connection with a client and launch the chat room
         with socket.socket() as self.initialSocket:
-            self.connSocket = self.launchSocket() 
+            self.connSocket = self.launchSocket()
             self.clientName = self.clientConnect()
             self.chatRoom()
 
@@ -70,18 +146,20 @@ class HangmanGameServer():
         try:
             # Bind port number to the socket and listen for client requests to connect
             self.initialSocket.bind((self.socketHost, self.port))
-            self.initialSocket.listen(1)  # Listening for incoming client requests
-            print('\nServer listening on:', self.socketHost, 'on port:', self.port)
+            # Listening for incoming client requests
+            self.initialSocket.listen(1)
+            print('\nServer listening on:',
+                  self.socketHost, 'on port:', self.port)
 
             newSocket, addr = self.initialSocket.accept()
             print('Received connection from (', addr[0], ',', addr[1], ')\n')
             return newSocket
-        
+
         # Server's socket setup for the connection request failed to bind/connect
         except:
             print('Error: socket failed to launch')
             return
-        
+
     def clientConnect(self):
         """
         Parameters: none
@@ -96,11 +174,11 @@ class HangmanGameServer():
             print(newClient, 'has connected to the chat room\nEnter /q to exit')
             print('Please wait for input prompt before entering message to send\n')
             return newClient
-        
+
         # Client failed to connect or exited before entering a username
         except:
             print('Error: client has failed to connect')
-            return 
+            return
 
     def chatRoom(self):
         """
@@ -120,7 +198,8 @@ class HangmanGameServer():
                 self.connSocket.send(myMessage.encode())
                 print('Shutting down \n')
                 break
-            self.connSocket.send(myMessage.encode())  # Sending message to client
+            # Sending message to client
+            self.connSocket.send(myMessage.encode())
 
             # Receiving incoming client messages
             clientMessage = self.connSocket.recv(4096)
@@ -144,12 +223,20 @@ class HangmanGameServer():
         # Set up the game environment
         gameMsg = 'Welcome to a game of hangman!\nType "1" to start'
         self.connSocket.send(gameMsg.encode())
-        self.secretWord = input('Choose a word for ' + self.clientName + ' to guess: ')
+        self.secretWord = input('Choose a word for ' +
+                                self.clientName + ' to guess: ')
 
         # Validate the word to guess has only letters, no numbers or symbols
         if not self.secretWord.isalpha():
-            self.secretWord = input('Invalid. Please enter a word with only letters: ')
-        time.sleep(1)
+            self.secretWord = input(
+                'Invalid. Please enter a word with only letters: ')
+
+        # Print the word with all letters changed to empty slots for the client
+        printStart = ''
+        for char in self.secretWord:
+            printStart += '_'
+        sendTo = printStart + '\nHere are the currently revealed letters. Guess a letter\n'
+        self.connSocket.send(sendTo.encode())
         self.gameLogic()
 
     def gameLogic(self):
@@ -161,24 +248,54 @@ class HangmanGameServer():
         and ending/exiting the game
         """
         while self.turns > 0:
-            printLine = self.printLine()  # Print out the secretWord with revealed letters
-            print(printLine)
 
             # Receiving the client's letter guess on each turn
-            clientGuess = self.connSocket.recv(4096)
-            clientGuess = clientGuess.decode()
-            if clientGuess == '1': continue
+            clientGuess = self.connSocket.recv(4096).decode()
+            clientGuess = str(clientGuess)
+            if clientGuess == '1':
+                continue
+
+            # If the client wants to exit the game, both the game and chat room session are closed
+            if clientGuess == '/q':
+                print(self.clientName, ' has left the game. Shutting down')
+                exitGame = '\nYou have exited the game and chat room. Shutting down'
+                self.connSocket.send(exitGame.encode())
+                quit()
+
+            self.guesses += clientGuess
+            self.checkGuess(clientGuess)
+
+    def checkGuess(self, guess):
+        """
+        Parameters: one parameter, the client's latest guess
+        Returns: none
+
+        Takes the client's guess to check if the letter is in the secret word
+        or not, and check if the game has been won or lost on the latest turn
+        """
+        # For wrong letters removes a turn and lets client know to guess again
+        if guess not in self.secretWord:
+            self.turns -= 1
+            wrongLetter = f"Wrong letter. You have {self.turns} more guesses\n{self.HANGMANART[self.turns]}"
+            self.connSocket.send(wrongLetter.encode())
+
+            # When turns run out, game is over and returns to the chat room
+            if self.turns == 0:
+                print(self.clientName, ' has lost. Exiting to the chat room...')
+                gameOver = f"You lose.\n{self.HANGMANART[self.turns]}\nExiting to the chat room..."
+                self.connSocket.send(gameOver.encode())
+                self.chatRoom()
+        else:
+            printWord = self.printWord()
 
             # The client has guessed all the letters - the game ends and returns to regular chat
-            if self.notGuessed == 0 or '_' not in printLine:
-                gameWon = 'You won! The game will now exit back to the chat room'
+            if self.notGuessed == 0 or '_' not in printWord:
+                gameWon = 'You won! Exiting to the chat room...'
                 self.connSocket.send(gameWon.encode())
-                print(self.clientName, ' has won! The game is over. Exiting to the chat room...')
+                print(self.clientName, ' has won! Exiting to the chat room...')
                 self.chatRoom()
 
-            self.verifyGuess(clientGuess)
-    
-    def printLine(self):
+    def printWord(self):
         """
         Parameters: none
         Returns: none
@@ -198,40 +315,6 @@ class HangmanGameServer():
         sendTo = printedGuesses + '\nHere are the currently revealed letters. Guess a letter\n'
         self.connSocket.send(sendTo.encode())
         return printedGuesses
-    
-    def verifyGuess(self, guess):
-        """
-        Parameters: one parameter, a client's guess
-        Returns: none
-
-        Takes the client's guess at a letter and verifies if it a valid response,
-        a letter in the secretWord,  the losing turn, or shutting down the game
-        """
-        # If the client wants to exit the game, both the game and chat room session are closed
-        if guess == '/q':
-            print(self.clientName, ' has left game. Shutting down')
-            exitGame = '\nYou have exited the game and chat room. Shutting down'
-            self.connSocket.send(exitGame.encode())
-            quit()
-
-        # Makes sure guess is a single letter
-        if len(guess) > 1 or not guess.isalpha():
-            invalidChar = 'Invalid response. Please type just a single letter'
-            self.connSocket.send(invalidChar.encode())
-        self.guesses += guess
-
-        # For wrong letters removes a turn and lets client know to guess again
-        if guess not in self.secretWord:
-            self.turns -= 1
-            wrongLetter = f"Wrong letter. You have {self.turns} more guesses\n"
-            self.connSocket.send(wrongLetter.encode())
-
-            # When turns run out, game is over and returns to the chat room
-            if self.turns == 0:
-                print(self.clientName, ' has lost. Exiting to the chat room...')
-                gameOver = '\nNo more guesses. You lose. Exiting to the chat room...'
-                self.connSocket.send(gameOver.encode())
-                self.chatRoom()
 
 
 if __name__ == '__main__':
